@@ -15,6 +15,7 @@ type Foo struct {
 	x    string `xml:"x"` // not exported, with tag
 	Y    []string
 	Z    map[string]interface{}
+	i    interface{}
 	*Bar // embedded
 }
 
@@ -290,6 +291,21 @@ func TestField_Value(t *testing.T) {
 
 	// should panic
 	_ = s.Field("d").Value()
+}
+
+func TestField_Type(t *testing.T) {
+	s := newStruct()
+
+	str := s.Field("A").Type()
+	name := str.Name()
+	if name != "string" {
+		t.Errorf("Field's type of a A should be string")
+	}
+
+	empty := s.Field("i").Type().Name()
+	if empty != "" {
+		t.Error("Type of the interface should be empty")
+	}
 }
 
 func TestField_IsEmbedded(t *testing.T) {

@@ -683,7 +683,7 @@ func TestFillMap_Nil(t *testing.T) {
 	// nil should no
 	FillMap(T, nil)
 }
-func TestStruct(t *testing.T) {
+func TestIsStruct(t *testing.T) {
 	var T = struct{}{}
 
 	if !IsStruct(T) {
@@ -1450,4 +1450,70 @@ func TestMap_InterfaceTypeWithMapValue(t *testing.T) {
 	}()
 
 	_ = Map(a)
+}
+
+func TestStruct(t *testing.T) {
+
+	type B struct {
+		Name string `json:"name"`
+	}
+	type A struct {
+		ID      string `json:"user_id"`
+		Name    string `json:"name"`
+		IP      string `json:"ip"`
+		Query   string `json:"query"`
+		Omit    string `json:"-"`
+		Boo     bool
+		Some    string
+		Created *time.Time
+		Updated time.Time
+		Payload interface{} `json:"payload"`
+		Other   B           `json:"b"`
+		OtherB  *B
+		Fl      float64
+		Num     int `json:"num"`
+		private string
+	}
+
+	a := A{}
+	input := map[string]interface{}{
+		"user_id": "1f0a873b-a3b3-4b5b-adf5-42b371e5accd",
+		"name":    "test",
+		"ip":      "127.0.0.1",
+		"query":   "something",
+		"omit":    "omit this",
+		"Boo":     true,
+		"Created": "2016-12-12T16:14:16.054582Z",
+		"Updated": "2017-11-12T16:14:16.054582Z",
+		"payload": map[string]string{"test_param": "test_param"},
+		"b":       map[string]string{"name": "hello"},
+		"num":     12123,
+	}
+	defer func() {
+		err := recover()
+		if err != nil {
+			t.Error(err)
+		}
+	}()
+
+	s := New(&a)
+	s.TagName = "json"
+	s.Struct(input)
+
+	if !reflect.DeepEqual(input["user_id"], a.ID) ||
+		!reflect.DeepEqual(input["name"], a.Name) ||
+		!reflect.DeepEqual(input["ip"], a.IP) ||
+		!reflect.DeepEqual(input["query"], a.Query) ||
+		!reflect.DeepEqual(input["payload"], a.Payload) ||
+		!reflect.DeepEqual(input["Boo"], a.Boo) ||
+		!reflect.DeepEqual(input["num"], a.Num) {
+		t.Errorf("Value does not match expected: %q != %q", a, input)
+	}
+
+	s1 := New(a)
+	s1.TagName = "json"
+	if err := s1.Struct(input); err == nil {
+		t.Errorf("Should fail if output variable is not a pointer")
+	}
+
 }

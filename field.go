@@ -31,6 +31,11 @@ func (f *Field) Value() interface{} {
 	return f.value.Interface()
 }
 
+// Type returns type of the field.
+func (f *Field) Type() reflect.Type {
+	return f.field.Type
+}
+
 // IsEmbedded returns true if the given field is an anonymous field (embedded)
 func (f *Field) IsEmbedded() bool {
 	return f.field.Anonymous

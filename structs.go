@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"reflect"
+	"time"
 )
 
 var (
@@ -581,4 +582,63 @@ func (s *Struct) nested(val reflect.Value) interface{} {
 	}
 
 	return finalVal
+}
+
+// Struct converts the given map[string]interface{} to a struct, where the keys
+// of the map are the field names and the values of the map the associated
+// values of the fields. The default key string is the struct field name but
+// can be changed in the struct field's tag value. The "structs" key in the
+// struct's field tag value is the key name. Example:
+//
+//   // Field appears in map as key "user_id".
+//   UserID string `json:"user_id"`
+//
+//   user := User{}
+// 	 s := structs.New(&user)
+//   s.TagName = "json"
+//   s.Struct(input)
+//   // User now contains values from the map
+//
+// Nested structs are not supported
+// Only generic types will work + time.Time
+func (s *Struct) Struct(input interface{}) error {
+
+	data, ok := input.(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("input is not a map of [string]interface")
+	}
+
+	wrap := reflect.ValueOf(s.raw)
+	if wrap.Kind() != reflect.Ptr || wrap.IsNil() {
+		return fmt.Errorf("must provide pointer to the receiving struct")
+	}
+	value := reflect.Indirect(wrap)
+
+	for _, f := range s.Fields() {
+		if !f.IsExported() {
+			continue
+		}
+		tag, _ := parseTag(f.Tag(s.TagName))
+		if len(tag) == 0 {
+			tag = f.Name()
+		}
+		val, ok := data[tag]
+		if !ok {
+			continue
+		}
+		if f.Kind() == reflect.Struct || f.Kind() == reflect.Ptr {
+			if f.Type().Name() == "Time" {
+				if t, err := time.Parse(time.RFC3339, val.(string)); err == nil {
+					value.FieldByName(f.Name()).Set(reflect.ValueOf(t))
+				}
+			} else if reflect.ValueOf(f.Value()).Type().String() == "*time.Time" {
+				if t, err := time.Parse(time.RFC3339, val.(string)); err == nil {
+					value.FieldByName(f.Name()).Set(reflect.ValueOf(&t))
+				}
+			}
+			continue
+		}
+		value.FieldByName(f.Name()).Set(reflect.ValueOf(val))
+	}
+	return nil
 }
