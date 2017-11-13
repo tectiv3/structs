@@ -1507,7 +1507,7 @@ func TestStruct(t *testing.T) {
 		!reflect.DeepEqual(input["payload"], a.Payload) ||
 		!reflect.DeepEqual(input["Boo"], a.Boo) ||
 		!reflect.DeepEqual(input["num"], a.Num) {
-		t.Errorf("Value does not match expected: %q != %q", a, input)
+		t.Errorf("Value does not match expected")
 	}
 
 	s1 := New(a)
