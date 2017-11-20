@@ -626,19 +626,22 @@ func (s *Struct) Struct(input interface{}) error {
 		if !ok {
 			continue
 		}
+
 		if f.Kind() == reflect.Struct || f.Kind() == reflect.Ptr {
 			if f.Type().Name() == "Time" {
 				if t, err := time.Parse(time.RFC3339, val.(string)); err == nil {
 					value.FieldByName(f.Name()).Set(reflect.ValueOf(t))
 				}
-			} else if reflect.ValueOf(f.Value()).Type().String() == "*time.Time" {
+			} else if reflect.TypeOf(f.Value()).String() == "*time.Time" {
 				if t, err := time.Parse(time.RFC3339, val.(string)); err == nil {
 					value.FieldByName(f.Name()).Set(reflect.ValueOf(&t))
 				}
 			}
-			continue
+		} else if f.Kind() == reflect.Int && reflect.ValueOf(val).Kind() != reflect.Int {
+			value.FieldByName(f.Name()).Set(reflect.ValueOf(int(val.(float64))))
+		} else {
+			value.FieldByName(f.Name()).Set(reflect.ValueOf(val))
 		}
-		value.FieldByName(f.Name()).Set(reflect.ValueOf(val))
 	}
 	return nil
 }

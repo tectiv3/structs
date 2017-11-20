@@ -3,6 +3,7 @@ package structs
 import (
 	"fmt"
 	"reflect"
+	"runtime/debug"
 	"testing"
 	"time"
 )
@@ -1470,8 +1471,8 @@ func TestStruct(t *testing.T) {
 		Payload interface{} `json:"payload"`
 		Other   B           `json:"b"`
 		OtherB  *B
-		Fl      float64
-		Num     int `json:"num"`
+		Fl      float64 `json:"fl"`
+		Num     int     `json:"num"`
 		private string
 	}
 
@@ -1488,11 +1489,12 @@ func TestStruct(t *testing.T) {
 		"payload": map[string]string{"test_param": "test_param"},
 		"b":       map[string]string{"name": "hello"},
 		"num":     12123,
+		"fl":      2.12,
 	}
 	defer func() {
 		err := recover()
 		if err != nil {
-			t.Error(err)
+			t.Error(err, string(debug.Stack()))
 		}
 	}()
 
